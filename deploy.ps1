@@ -16,6 +16,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+# Windows PowerShell 5.1 puts a UTF-8 byte-order mark in front of text piped to programs; git then cannot
+# read "protocol=https" on the first line of a credential request. Pipe plain UTF-8 instead.
+[Console]::InputEncoding = New-Object System.Text.UTF8Encoding $false
+$OutputEncoding = New-Object System.Text.UTF8Encoding $false
 
 $Root = $PSScriptRoot
 $Work = Join-Path $Root '_publish'
@@ -35,7 +39,14 @@ $SkipFiles = @('*.pyc', '.env', '.env.local', '*.zip', '*.log')
 
 function Step($text) { Write-Host ''; Write-Host "==> $text" -ForegroundColor Cyan }
 function Fail($text) { Write-Host ''; Write-Host "ERROR: $text" -ForegroundColor Red; exit 1 }
-function Invoke-Git { & git.exe @args; if ($LASTEXITCODE -ne 0) { Fail "git $($args -join ' ') failed." } }
+# git writes progress and warnings to stderr; PowerShell 5.1 can turn those into errors under 'Stop', so
+# native calls run with 'Continue' and are judged by their exit code only.
+function Invoke-Git {
+    $ErrorActionPreference = 'Continue'
+    & git.exe @args 2>&1 | ForEach-Object { Write-Host "  $_" }
+    if ($LASTEXITCODE -ne 0) { Fail "git $($args -join ' ') failed." }
+}
+function Quiet-Git { $ErrorActionPreference = 'Continue'; & git.exe @args 2>$null }
 
 function Api($Method, $Path, $Body) {
     $params = @{ Method = $Method; Uri = "https://api.github.com$Path"; Headers = $script:Headers }
@@ -49,16 +60,16 @@ function StatusOf($err) { try { [int]$err.Exception.Response.StatusCode } catch 
 $env:GCM_GITHUB_AUTHMODES = 'browser'
 
 function Forget-GitHub {
-    foreach ($user in @(git credential-manager github list 2>$null)) {
-        if ($user) { git credential-manager github logout $user 2>$null | Out-Null; Write-Host "Signed out $user." }
+    foreach ($user in @(Quiet-Git credential-manager github list)) {
+        if ($user) { Quiet-Git credential-manager github logout $user | Out-Null; Write-Host "Signed out $user." }
     }
-    "protocol=https`nhost=github.com`n`n" | git credential reject 2>$null
+    "protocol=https`nhost=github.com`n`n" | Quiet-Git credential reject
 }
 
 function Sign-In {
     for ($try = 1; $try -le 2; $try++) {
         Write-Host "Your browser opens GitHub: sign in as '$Owner' and click Authorize, then come back here."
-        $filled = "protocol=https`nhost=github.com`n`n" | git credential fill
+        $filled = & { $ErrorActionPreference = 'Continue'; "protocol=https`nhost=github.com`n`n" | git.exe credential fill }
         if ($LASTEXITCODE -ne 0 -or -not $filled) { Fail 'GitHub sign-in was cancelled or failed. Run github-login.bat to try again.' }
         $token = ($filled | Where-Object { $_ -like 'password=*' }) -replace '^password=', ''
         $script:Headers = @{ Authorization = "Bearer $token"; 'User-Agent' = 'schematic-reader-deploy'; Accept = 'application/vnd.github+json' }
@@ -70,7 +81,7 @@ function Sign-In {
             Forget-GitHub
             continue
         }
-        "protocol=https`nhost=github.com`nusername=$($me.login)`npassword=$token`n`n" | git credential approve
+        "protocol=https`nhost=github.com`nusername=$($me.login)`npassword=$token`n`n" | Quiet-Git credential approve
         Write-Host "Signed in to GitHub as $($me.login)." -ForegroundColor Green
         return $me
     }
@@ -136,7 +147,7 @@ Step 'Pushing the code (main branch)'
 New-Item -ItemType Directory -Force $Work | Out-Null
 if (-not (Test-Path (Join-Path $Stage '.git'))) {
     if (Test-Path $Stage) { Remove-Item $Stage -Recurse -Force }
-    $remoteMain = git ls-remote --heads $GitUrl main 2>$null
+    $remoteMain = Quiet-Git ls-remote --heads $GitUrl main
     if ($remoteMain) { Invoke-Git clone --quiet $GitUrl $Stage } else { New-Item -ItemType Directory -Force $Stage | Out-Null; Invoke-Git -C $Stage init --quiet -b main }
 }
 Get-ChildItem $Stage -Force | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force
@@ -151,9 +162,9 @@ foreach ($f in $list) {
 Invoke-Git -C $Stage config user.name $Owner
 Invoke-Git -C $Stage config user.email "$Owner@users.noreply.github.com"
 Invoke-Git -C $Stage add -A
-if (git -C $Stage status --porcelain) { Invoke-Git -C $Stage commit --quiet -m "Publish AI Circuit Schematic Reader ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))" }
+if (Quiet-Git -C $Stage status --porcelain) { Invoke-Git -C $Stage commit --quiet -m "Publish AI Circuit Schematic Reader ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))" }
 else { Write-Host 'No code changes since the last publish.' }
-if (git -C $Stage remote) { Invoke-Git -C $Stage remote set-url origin $GitUrl } else { Invoke-Git -C $Stage remote add origin $GitUrl }
+if (Quiet-Git -C $Stage remote) { Invoke-Git -C $Stage remote set-url origin $GitUrl } else { Invoke-Git -C $Stage remote add origin $GitUrl }
 Invoke-Git -C $Stage push --quiet -u origin main
 
 # ------------------------------------------------------------------ website -> gh-pages

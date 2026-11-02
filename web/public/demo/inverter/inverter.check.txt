@@ -1,1 +1,0 @@
-PASS Load sees a square wave -8.398 .. 8.398 V, hand calculation ±8.4 V (10 V less two 0.8 V drops)

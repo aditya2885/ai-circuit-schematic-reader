@@ -1,5 +1,0 @@
-designator,category,value,part_number,role,pins
-B1,voltage_source,5V,unknown,power source,+=B1+; -=R2_right
-R1,resistor,5Ω,unknown,series resistor,1=B1+; 2=R1_right
-C1,capacitor,3μF,unknown,filtering or timing,1=B1+; 2=R2_right
-R2,resistor,2Ω,unknown,series resistor,1=R1_right; 2=R2_right
