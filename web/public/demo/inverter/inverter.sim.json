@@ -1,0 +1,255 @@
+{
+  "name": "inverter",
+  "ground": "-V",
+  "parts": [
+    {
+      "id": "D1",
+      "kind": "diode",
+      "params": {},
+      "value_text": "unknown",
+      "nets": [
+        "N3",
+        "+V"
+      ],
+      "at": {
+        "x": 252,
+        "y": 168,
+        "orientation": "vertical",
+        "sides": [
+          "bottom",
+          "top"
+        ]
+      }
+    },
+    {
+      "id": "D2",
+      "kind": "diode",
+      "params": {},
+      "value_text": "unknown",
+      "nets": [
+        "-V",
+        "N4"
+      ],
+      "at": {
+        "x": 956,
+        "y": 412,
+        "orientation": "vertical",
+        "sides": [
+          "bottom",
+          "top"
+        ]
+      }
+    },
+    {
+      "id": "D3",
+      "kind": "diode",
+      "params": {},
+      "value_text": "unknown",
+      "nets": [
+        "N4",
+        "+V"
+      ],
+      "at": {
+        "x": 955,
+        "y": 168,
+        "orientation": "vertical",
+        "sides": [
+          "bottom",
+          "top"
+        ]
+      }
+    },
+    {
+      "id": "D4",
+      "kind": "diode",
+      "params": {},
+      "value_text": "unknown",
+      "nets": [
+        "-V",
+        "N3"
+      ],
+      "at": {
+        "x": 252,
+        "y": 412,
+        "orientation": "vertical",
+        "sides": [
+          "bottom",
+          "top"
+        ]
+      }
+    },
+    {
+      "id": "Th1",
+      "kind": "gto",
+      "params": {
+        "gate": "50 Hz, 0°"
+      },
+      "value_text": "unknown",
+      "nets": [
+        "+V",
+        "N3",
+        "G_Th1"
+      ],
+      "at": {
+        "x": 450,
+        "y": 190,
+        "orientation": "vertical",
+        "sides": [
+          "top",
+          "bottom",
+          "left"
+        ]
+      },
+      "gate": {
+        "frequency": 50.0,
+        "phase_deg": 0.0,
+        "width_pct": 50
+      }
+    },
+    {
+      "id": "Th2",
+      "kind": "gto",
+      "params": {
+        "gate": "50 Hz, 0°"
+      },
+      "value_text": "unknown",
+      "nets": [
+        "N4",
+        "-V",
+        "G_Th2"
+      ],
+      "at": {
+        "x": 743,
+        "y": 435,
+        "orientation": "vertical",
+        "sides": [
+          "top",
+          "bottom",
+          "left"
+        ]
+      },
+      "gate": {
+        "frequency": 50.0,
+        "phase_deg": 0.0,
+        "width_pct": 50
+      }
+    },
+    {
+      "id": "Th3",
+      "kind": "gto",
+      "params": {
+        "gate": "50 Hz, 180°"
+      },
+      "value_text": "unknown",
+      "nets": [
+        "+V",
+        "N4",
+        "G_Th3"
+      ],
+      "at": {
+        "x": 744,
+        "y": 190,
+        "orientation": "vertical",
+        "sides": [
+          "top",
+          "bottom",
+          "left"
+        ]
+      },
+      "gate": {
+        "frequency": 50.0,
+        "phase_deg": 180.0,
+        "width_pct": 50
+      }
+    },
+    {
+      "id": "Th4",
+      "kind": "gto",
+      "params": {
+        "gate": "50 Hz, 180°"
+      },
+      "value_text": "unknown",
+      "nets": [
+        "N3",
+        "-V",
+        "G_Th4"
+      ],
+      "at": {
+        "x": 446,
+        "y": 444,
+        "orientation": "vertical",
+        "sides": [
+          "top",
+          "bottom",
+          "right"
+        ]
+      },
+      "gate": {
+        "frequency": 50.0,
+        "phase_deg": 180.0,
+        "width_pct": 50
+      }
+    },
+    {
+      "id": "Load",
+      "kind": "resistor",
+      "params": {
+        "R": 10.0
+      },
+      "value_text": "unknown",
+      "nets": [
+        "N3",
+        "N4"
+      ],
+      "at": {
+        "x": 612,
+        "y": 303,
+        "orientation": "horizontal",
+        "sides": [
+          "left",
+          "right"
+        ]
+      }
+    },
+    {
+      "id": "V",
+      "kind": "dc_voltage",
+      "params": {
+        "v0": 10.0
+      },
+      "value_text": "unknown",
+      "nets": [
+        "+V",
+        "-V"
+      ],
+      "at": {
+        "x": 74,
+        "y": 308,
+        "orientation": "vertical",
+        "sides": [
+          "top",
+          "bottom"
+        ]
+      }
+    }
+  ],
+  "stop_time": 0.1,
+  "max_step": 1e-05,
+  "assumed": [
+    "Gate timing is not in the drawing: switches fire as a square-wave bridge at 50 Hz (diagonal pairs 180° apart). Edit 'gate' in the .sim.json to change it.",
+    "Th1: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Th2: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Th3: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Th4: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Load: Load value not given; modelled as a 10 Ω resistor.",
+    "V: Value not readable; default 10 V."
+  ],
+  "issues": [],
+  "drawing": {
+    "size": [
+      1000,
+      575
+    ],
+    "grounds": []
+  }
+}

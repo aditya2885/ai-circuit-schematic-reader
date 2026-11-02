@@ -1,0 +1,170 @@
+{
+  "circuit_type": "RC circuit",
+  "summary": "A simple RC circuit with a 5V battery, a 3\u03bcF capacitor, and two resistors (5\u03a9 and 2\u03a9) arranged in a series-parallel configuration. The capacitor is in parallel with the 5\u03a9 resistor, and this combination is in series with the 2\u03a9 resistor, all connected to the battery.",
+  "drawing_style": "hand_drawn",
+  "nodes": [
+    {
+      "name": "B1+",
+      "joins": "B1 +, R1 left end, C1 top plate"
+    },
+    {
+      "name": "B1-",
+      "joins": "B1 -, R2 left end, C1 bottom plate"
+    },
+    {
+      "name": "R1_right",
+      "joins": "R1 right end, R2 left end"
+    },
+    {
+      "name": "R2_right",
+      "joins": "R2 right end, B1 -"
+    }
+  ],
+  "topology": "The 5\u03a9 resistor and 3\u03bcF capacitor are in parallel with each other, and this parallel combination is in series with the 2\u03a9 resistor, all connected across the 5V battery.",
+  "components": [
+    {
+      "designator": "B1",
+      "category": "voltage_source",
+      "value": "5V",
+      "part_number": "unknown",
+      "role": "power source",
+      "pins": [
+        {
+          "pin": "+",
+          "net": "B1+"
+        },
+        {
+          "pin": "-",
+          "net": "R2_right"
+        }
+      ]
+    },
+    {
+      "designator": "R1",
+      "category": "resistor",
+      "value": "5\u03a9",
+      "part_number": "unknown",
+      "role": "series resistor",
+      "pins": [
+        {
+          "pin": "1",
+          "net": "B1+"
+        },
+        {
+          "pin": "2",
+          "net": "R1_right"
+        }
+      ]
+    },
+    {
+      "designator": "C1",
+      "category": "capacitor",
+      "value": "3\u03bcF",
+      "part_number": "unknown",
+      "role": "filtering or timing",
+      "pins": [
+        {
+          "pin": "1",
+          "net": "B1+"
+        },
+        {
+          "pin": "2",
+          "net": "R2_right"
+        }
+      ]
+    },
+    {
+      "designator": "R2",
+      "category": "resistor",
+      "value": "2\u03a9",
+      "part_number": "unknown",
+      "role": "series resistor",
+      "pins": [
+        {
+          "pin": "1",
+          "net": "R1_right"
+        },
+        {
+          "pin": "2",
+          "net": "R2_right"
+        }
+      ]
+    }
+  ],
+  "power_rails": [],
+  "connectors": [],
+  "functional_blocks": [],
+  "interfaces": [],
+  "design_notes": [],
+  "unreadable_or_uncertain": [],
+  "confidence": "high",
+  "nets": {
+    "B1+": [
+      "B1.+",
+      "R1.1",
+      "C1.1"
+    ],
+    "R1_right": [
+      "R1.2",
+      "R2.1"
+    ],
+    "R2_right": [
+      "B1.-",
+      "C1.2",
+      "R2.2"
+    ]
+  },
+  "connectivity_warnings": [
+    "Wire tracing: 3/4 parts traced from the drawing, 3 nets, 1 part(s) corrected.",
+    "B1: its box overlaps C1's, so it is probably misplaced; kept the model's reading.",
+    "B1: net B1- matched to traced wire R2_right.",
+    "C1: pins re-traced from the wires: 2 B1- -> R2_right"
+  ],
+  "layout": {
+    "size": [
+      1387,
+      874
+    ],
+    "parts": {
+      "B1": {
+        "x": 268,
+        "y": 482,
+        "w": 355,
+        "h": 291
+      },
+      "R1": {
+        "x": 582,
+        "y": 305,
+        "w": 147,
+        "h": 56,
+        "orientation": "horizontal",
+        "pins": {
+          "1": "left",
+          "2": "right"
+        }
+      },
+      "C1": {
+        "x": 409,
+        "y": 456,
+        "w": 184,
+        "h": 279,
+        "orientation": "vertical",
+        "pins": {
+          "1": "top",
+          "2": "bottom"
+        }
+      },
+      "R2": {
+        "x": 875,
+        "y": 462,
+        "w": 74,
+        "h": 278,
+        "orientation": "vertical",
+        "pins": {
+          "1": "top",
+          "2": "bottom"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-pages/
+__pycache__/
+*.pyc
+.env
+.env.local
+server_data/
+_publish/
+simulink/out/
+tools_node/
