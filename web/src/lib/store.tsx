@@ -81,11 +81,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDiscovered(await discoverPublicBackend());
     setDiscovering(false);
   }, [hosted]);
+  // Look again every minute while the analysis PC is offline (so the page goes Live without a reload), and
+  // every five minutes once found (its address changes on each Start-Public.bat run).
   useEffect(() => {
     void discover();
-    const t = window.setInterval(() => void discover(), 5 * 60000);
+    const t = window.setInterval(() => void discover(), (discovered ? 5 : 1) * 60000);
     return () => window.clearInterval(t);
-  }, [discover]);
+  }, [discover, discovered]);
   const userUrl = settings.apiUrl !== ENV_API_URL ? settings.apiUrl : "";
   const apiBase = userUrl || discovered || settings.apiUrl;
 
@@ -115,7 +117,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const check = useCallback(() => {
     const offline = (error: string) => {
       setBackend({ status: "offline", error });
-      if (ENV_MODE === "auto" && !readStorage(MANUAL_KEY, false)) setSettings((s) => (s.mode === "demo" ? s : { ...s, mode: "demo" }));
+      if (ENV_MODE === "auto" && (hosted || !readStorage(MANUAL_KEY, false))) setSettings((s) => (s.mode === "demo" ? s : { ...s, mode: "demo" }));
     };
     // On the hosted site, a visitor's own PC has no analysis server: only the published one counts.
     if (hosted && !discovered && !userUrl) {
@@ -126,7 +128,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .health()
       .then((health) => {
         setBackend({ status: "online", health });
-        if (ENV_MODE === "auto" && !readStorage(MANUAL_KEY, false)) setSettings((s) => (s.mode === "live" ? s : { ...s, mode: "live" }));
+        if (ENV_MODE === "auto" && (hosted || !readStorage(MANUAL_KEY, false))) setSettings((s) => (s.mode === "live" ? s : { ...s, mode: "live" }));
       })
       .catch((err: Error) => offline(err.message));
   }, [live, hosted, discovered, userUrl]);

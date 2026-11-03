@@ -17,7 +17,7 @@ export async function discoverPublicBackend(): Promise<string | null> {
     const { url } = (await res.json()) as { url?: string | null };
     if (!url || !/^https:\/\//.test(url)) return null;
     const ctrl = new AbortController();
-    const timer = window.setTimeout(() => ctrl.abort(), 6000);
+    const timer = window.setTimeout(() => ctrl.abort(), 15000); // a fresh tunnel can be slow to answer
     try {
       const health = await fetch(`${url.replace(/\/$/, "")}/api/health`, { signal: ctrl.signal, cache: "no-store" });
       return health.ok ? url.replace(/\/$/, "") : null;
