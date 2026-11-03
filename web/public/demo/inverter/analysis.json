@@ -1,0 +1,1063 @@
+{
+ "id": "demo-inverter",
+ "demo": true,
+ "created": 0,
+ "updated": 0,
+ "status": "done",
+ "error": null,
+ "title": "H-bridge",
+ "file": {
+  "id": "demo-inverter",
+  "name": "inverter.png",
+  "size": 16903,
+  "width": 0,
+  "height": 0,
+  "type": "image/png",
+  "url": "/demo/inverter/schematic.png"
+ },
+ "options": {},
+ "stages": [
+  {
+   "key": "image",
+   "title": "Image processing",
+   "description": "Preparing the schematic: upright, ruled lines removed, cropped and contrast-enhanced.",
+   "status": "done",
+   "detail": "Saved run: prepared as the reader does (upright, cleaned, contrast-enhanced).",
+   "log": [],
+   "started": null,
+   "ended": null
+  },
+  {
+   "key": "components",
+   "title": "Component detection",
+   "description": "Identifying resistors, capacitors, inductors, diodes, transistors, switches and sources.",
+   "status": "done",
+   "detail": "10 parts",
+   "log": [],
+   "started": null,
+   "ended": null
+  },
+  {
+   "key": "values",
+   "title": "Value extraction",
+   "description": "Reading component values and labels.",
+   "status": "done",
+   "detail": "0 of 10 values read; unreadable: D1, D2, D3, D4, Th1, Th2, Th3, Th4, Load, V",
+   "log": [],
+   "started": null,
+   "ended": null
+  },
+  {
+   "key": "connections",
+   "title": "Connection detection",
+   "description": "Finding which wires join which terminals.",
+   "status": "done",
+   "detail": "Wire tracing: 10/10 parts traced from the drawing, 8 nets, 8 part(s) corrected.",
+   "log": [],
+   "started": null,
+   "ended": null
+  },
+  {
+   "key": "reconstruct",
+   "title": "Circuit reconstruction",
+   "description": "Building nets and the structured circuit description.",
+   "status": "done",
+   "detail": "schematic.json, schematic.net.txt",
+   "log": [],
+   "started": null,
+   "ended": null
+  },
+  {
+   "key": "validate",
+   "title": "Validation",
+   "description": "Checking for missing values, ambiguous connections and possible errors.",
+   "status": "warning",
+   "detail": "13 reader warning(s), 0 modelling issue(s), 7 assumed value(s)",
+   "log": [
+    "V (dc_voltage, unknown): source added by a targeted second look; verify it.",
+    "D1: pins re-traced from the wires: A +V -> N3, K N1 -> +V",
+    "D2: pins re-traced from the wires: A N2 -> -V, K -V -> N4",
+    "D3: pins re-traced from the wires: A +V -> N4, K N4 -> +V",
+    "D4: pins re-traced from the wires: A N3 -> -V, K -V -> N3",
+    "Th1: pins re-traced from the wires: G unknown -> G_Th1",
+    "Th2: pins re-traced from the wires: G unknown -> G_Th2",
+    "Th3: pins re-traced from the wires: G unknown -> G_Th3",
+    "Th4: pins re-traced from the wires: G unknown -> G_Th4",
+    "Net G_Th1 has only one connection (Th1.G): missed wire, or it continues on another sheet/crop.",
+    "Net G_Th2 has only one connection (Th2.G): missed wire, or it continues on another sheet/crop.",
+    "Net G_Th3 has only one connection (Th3.G): missed wire, or it continues on another sheet/crop.",
+    "Net G_Th4 has only one connection (Th4.G): missed wire, or it continues on another sheet/crop.",
+    "Simulink default: Gate timing is not in the drawing: switches fire as a square-wave bridge at 50 Hz (diagonal pairs 180° apart). Edit 'gate' in the .sim.json to change it.",
+    "Simulink default: Th1: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Simulink default: Th2: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Simulink default: Th3: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Simulink default: Th4: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+    "Simulink default: Load: Load value not given; modelled as a 10 Ω resistor.",
+    "Simulink default: V: Value not readable; default 10 V."
+   ],
+   "started": null,
+   "ended": null
+  },
+  {
+   "key": "simulink",
+   "title": "MATLAB model generation",
+   "description": "Building the Simulink/Simscape model and simulating it.",
+   "status": "done",
+   "detail": "10 blocks built and simulated; 1 PASS, 0 FAIL",
+   "log": [],
+   "started": null,
+   "ended": null
+  }
+ ],
+ "log": [],
+ "simulink": {
+  "status": "done",
+  "error": null,
+  "stale": false,
+  "started": null,
+  "ended": null,
+  "phase": "Simulated",
+  "check": [
+   "PASS Load sees a square wave -8.398 .. 8.398 V, hand calculation ±8.4 V (10 V less two 0.8 V drops)"
+  ],
+  "log": []
+ },
+ "result": {
+  "circuit_type": "H-bridge",
+  "summary": "This is a full H-bridge circuit using four thyristors (Th1, Th2, Th3, Th4) and four antiparallel diodes (D1, D2, D3, D4) to control the direction and magnitude of current through a load. The input voltage V is applied across the top and bottom rails. The load is connected between the two midpoint nodes of the H-bridge. Current flows through the load in one direction when Th1 and Th4 are conducting, and in the opposite direction when Th2 and Th3 are conducting. The diodes provide a freewheeling path for inductive loads.",
+  "drawing_style": "printed",
+  "confidence": "high",
+  "topology": "The H-bridge consists of two legs. The top leg has Th1 and Th3, with D1 and D3 as antiparallel diodes. The bottom leg has Th2 and Th4, with D2 and D4 as antiparallel diodes. The load is connected between the midpoints of the two legs (N3 and N4). The input voltage V is applied across the top and bottom rails. The diodes provide a freewheeling path for inductive loads.",
+  "design_notes": [
+   "This is a full H-bridge circuit. The thyristors are typically controlled by a microcontroller or other logic circuit to switch the current direction through the load."
+  ],
+  "unreadable": [],
+  "components": [
+   {
+    "designator": "D1",
+    "category": "diode",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "antiparallel diode",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "N3"
+     },
+     {
+      "pin": "K",
+      "net": "+V"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: A +V -> N3, K N1 -> +V"
+     ]
+    }
+   },
+   {
+    "designator": "D2",
+    "category": "diode",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "antiparallel diode",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "-V"
+     },
+     {
+      "pin": "K",
+      "net": "N4"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: A N2 -> -V, K -V -> N4"
+     ]
+    }
+   },
+   {
+    "designator": "D3",
+    "category": "diode",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "antiparallel diode",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "N4"
+     },
+     {
+      "pin": "K",
+      "net": "+V"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: A +V -> N4, K N4 -> +V"
+     ]
+    }
+   },
+   {
+    "designator": "D4",
+    "category": "diode",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "antiparallel diode",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "-V"
+     },
+     {
+      "pin": "K",
+      "net": "N3"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: A N3 -> -V, K -V -> N3"
+     ]
+    }
+   },
+   {
+    "designator": "Th1",
+    "category": "thyristor",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "switch",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "+V"
+     },
+     {
+      "pin": "K",
+      "net": "N3"
+     },
+     {
+      "pin": "G",
+      "net": "G_Th1"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: G unknown -> G_Th1"
+     ]
+    }
+   },
+   {
+    "designator": "Th2",
+    "category": "thyristor",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "switch",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "N4"
+     },
+     {
+      "pin": "K",
+      "net": "-V"
+     },
+     {
+      "pin": "G",
+      "net": "G_Th2"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: G unknown -> G_Th2"
+     ]
+    }
+   },
+   {
+    "designator": "Th3",
+    "category": "thyristor",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "switch",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "+V"
+     },
+     {
+      "pin": "K",
+      "net": "N4"
+     },
+     {
+      "pin": "G",
+      "net": "G_Th3"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: G unknown -> G_Th3"
+     ]
+    }
+   },
+   {
+    "designator": "Th4",
+    "category": "thyristor",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "switch",
+    "pins": [
+     {
+      "pin": "A",
+      "net": "N3"
+     },
+     {
+      "pin": "K",
+      "net": "-V"
+     },
+     {
+      "pin": "G",
+      "net": "G_Th4"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": [
+      "pins re-traced from the wires: G unknown -> G_Th4"
+     ]
+    }
+   },
+   {
+    "designator": "Load",
+    "category": "other",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "load",
+    "pins": [
+     {
+      "pin": "1",
+      "net": "N3"
+     },
+     {
+      "pin": "2",
+      "net": "N4"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "value not readable"
+     ],
+     "corrections": []
+    }
+   },
+   {
+    "designator": "V",
+    "category": "voltage_source",
+    "value": "unknown",
+    "part_number": "unknown",
+    "role": "supply",
+    "pins": [
+     {
+      "pin": "+",
+      "net": "+V"
+     },
+     {
+      "pin": "-",
+      "net": "-V"
+     }
+    ],
+    "evidence": {
+     "level": "check",
+     "reasons": [
+      "added by a second look",
+      "value not readable"
+     ],
+     "corrections": []
+    }
+   }
+  ],
+  "connections": [
+   {
+    "net": "+V",
+    "members": [
+     {
+      "designator": "D1",
+      "pin": "K"
+     },
+     {
+      "designator": "D3",
+      "pin": "K"
+     },
+     {
+      "designator": "Th1",
+      "pin": "A"
+     },
+     {
+      "designator": "Th3",
+      "pin": "A"
+     },
+     {
+      "designator": "V",
+      "pin": "+"
+     }
+    ],
+    "flags": []
+   },
+   {
+    "net": "-V",
+    "members": [
+     {
+      "designator": "D2",
+      "pin": "A"
+     },
+     {
+      "designator": "D4",
+      "pin": "A"
+     },
+     {
+      "designator": "Th2",
+      "pin": "K"
+     },
+     {
+      "designator": "Th4",
+      "pin": "K"
+     },
+     {
+      "designator": "V",
+      "pin": "-"
+     }
+    ],
+    "flags": []
+   },
+   {
+    "net": "G_Th1",
+    "members": [
+     {
+      "designator": "Th1",
+      "pin": "G"
+     }
+    ],
+    "flags": [
+     "single connection"
+    ]
+   },
+   {
+    "net": "G_Th2",
+    "members": [
+     {
+      "designator": "Th2",
+      "pin": "G"
+     }
+    ],
+    "flags": [
+     "single connection"
+    ]
+   },
+   {
+    "net": "G_Th3",
+    "members": [
+     {
+      "designator": "Th3",
+      "pin": "G"
+     }
+    ],
+    "flags": [
+     "single connection"
+    ]
+   },
+   {
+    "net": "G_Th4",
+    "members": [
+     {
+      "designator": "Th4",
+      "pin": "G"
+     }
+    ],
+    "flags": [
+     "single connection"
+    ]
+   },
+   {
+    "net": "N3",
+    "members": [
+     {
+      "designator": "D1",
+      "pin": "A"
+     },
+     {
+      "designator": "D4",
+      "pin": "K"
+     },
+     {
+      "designator": "Th1",
+      "pin": "K"
+     },
+     {
+      "designator": "Th4",
+      "pin": "A"
+     },
+     {
+      "designator": "Load",
+      "pin": "1"
+     }
+    ],
+    "flags": []
+   },
+   {
+    "net": "N4",
+    "members": [
+     {
+      "designator": "D2",
+      "pin": "K"
+     },
+     {
+      "designator": "D3",
+      "pin": "A"
+     },
+     {
+      "designator": "Th2",
+      "pin": "A"
+     },
+     {
+      "designator": "Th3",
+      "pin": "K"
+     },
+     {
+      "designator": "Load",
+      "pin": "2"
+     }
+    ],
+    "flags": []
+   }
+  ],
+  "warnings": [
+   "V (dc_voltage, unknown): source added by a targeted second look; verify it.",
+   "Wire tracing: 10/10 parts traced from the drawing, 8 nets, 8 part(s) corrected.",
+   "D1: pins re-traced from the wires: A +V -> N3, K N1 -> +V",
+   "D2: pins re-traced from the wires: A N2 -> -V, K -V -> N4",
+   "D3: pins re-traced from the wires: A +V -> N4, K N4 -> +V",
+   "D4: pins re-traced from the wires: A N3 -> -V, K -V -> N3",
+   "Th1: pins re-traced from the wires: G unknown -> G_Th1",
+   "Th2: pins re-traced from the wires: G unknown -> G_Th2",
+   "Th3: pins re-traced from the wires: G unknown -> G_Th3",
+   "Th4: pins re-traced from the wires: G unknown -> G_Th4",
+   "Net G_Th1 has only one connection (Th1.G): missed wire, or it continues on another sheet/crop.",
+   "Net G_Th2 has only one connection (Th2.G): missed wire, or it continues on another sheet/crop.",
+   "Net G_Th3 has only one connection (Th3.G): missed wire, or it continues on another sheet/crop.",
+   "Net G_Th4 has only one connection (Th4.G): missed wire, or it continues on another sheet/crop."
+  ],
+  "netlist": "# Netlist reconstructed by schematic-reader from: inverter.png\n# UNVERIFIED: machine-read from an image. Check against the schematic before using it.\n\n## Components\nD1       diode      unknown    unknown          A=N3  K=+V\nD2       diode      unknown    unknown          A=-V  K=N4\nD3       diode      unknown    unknown          A=N4  K=+V\nD4       diode      unknown    unknown          A=-V  K=N3\nTh1      thyristor  unknown    unknown          A=+V  K=N3  G=G_Th1\nTh2      thyristor  unknown    unknown          A=N4  K=-V  G=G_Th2\nTh3      thyristor  unknown    unknown          A=+V  K=N4  G=G_Th3\nTh4      thyristor  unknown    unknown          A=N3  K=-V  G=G_Th4\nLoad     other      unknown    unknown          1=N3  2=N4\nV        voltage_source unknown    unknown          +=+V  -=-V\n\n## Nets\n+V (5): D1.K, D3.K, Th1.A, Th3.A, V.+\n-V (5): D2.A, D4.A, Th2.K, Th4.K, V.-\nG_Th1 (1): Th1.G\nG_Th2 (1): Th2.G\nG_Th3 (1): Th3.G\nG_Th4 (1): Th4.G\nN3 (5): D1.A, D4.K, Th1.K, Th4.A, Load.1\nN4 (5): D2.K, D3.A, Th2.A, Th3.K, Load.2\n",
+  "bom": [
+   {
+    "category": "diode",
+    "value": "unknown",
+    "part_number": "unknown",
+    "quantity": 4,
+    "designators": [
+     "D1",
+     "D2",
+     "D3",
+     "D4"
+    ]
+   },
+   {
+    "category": "thyristor",
+    "value": "unknown",
+    "part_number": "unknown",
+    "quantity": 4,
+    "designators": [
+     "Th1",
+     "Th2",
+     "Th3",
+     "Th4"
+    ]
+   },
+   {
+    "category": "other",
+    "value": "unknown",
+    "part_number": "unknown",
+    "quantity": 1,
+    "designators": [
+     "Load"
+    ]
+   },
+   {
+    "category": "voltage_source",
+    "value": "unknown",
+    "part_number": "unknown",
+    "quantity": 1,
+    "designators": [
+     "V"
+    ]
+   }
+  ],
+  "layout": {
+   "size": [
+    1000,
+    575
+   ],
+   "parts": {
+    "D1": {
+     "x": 252,
+     "y": 168,
+     "w": 67,
+     "h": 52,
+     "orientation": "vertical",
+     "pins": {
+      "A": "bottom",
+      "K": "top"
+     }
+    },
+    "D2": {
+     "x": 956,
+     "y": 412,
+     "w": 66,
+     "h": 53,
+     "orientation": "vertical",
+     "pins": {
+      "A": "bottom",
+      "K": "top"
+     }
+    },
+    "D3": {
+     "x": 955,
+     "y": 168,
+     "w": 68,
+     "h": 52,
+     "orientation": "vertical",
+     "pins": {
+      "A": "bottom",
+      "K": "top"
+     }
+    },
+    "D4": {
+     "x": 252,
+     "y": 412,
+     "w": 67,
+     "h": 53,
+     "orientation": "vertical",
+     "pins": {
+      "A": "bottom",
+      "K": "top"
+     }
+    },
+    "Th1": {
+     "x": 450,
+     "y": 190,
+     "w": 79,
+     "h": 97,
+     "orientation": "vertical",
+     "pins": {
+      "A": "top",
+      "K": "bottom",
+      "G": "left"
+     }
+    },
+    "Th2": {
+     "x": 743,
+     "y": 435,
+     "w": 80,
+     "h": 98,
+     "orientation": "vertical",
+     "pins": {
+      "A": "top",
+      "K": "bottom",
+      "G": "left"
+     }
+    },
+    "Th3": {
+     "x": 744,
+     "y": 190,
+     "w": 78,
+     "h": 97,
+     "orientation": "vertical",
+     "pins": {
+      "A": "top",
+      "K": "bottom",
+      "G": "left"
+     }
+    },
+    "Th4": {
+     "x": 446,
+     "y": 444,
+     "w": 76,
+     "h": 80,
+     "orientation": "vertical",
+     "pins": {
+      "A": "top",
+      "K": "bottom",
+      "G": "right"
+     }
+    },
+    "Load": {
+     "x": 612,
+     "y": 303,
+     "w": 146,
+     "h": 80,
+     "orientation": "horizontal",
+     "pins": {
+      "1": "left",
+      "2": "right"
+     }
+    },
+    "V": {
+     "x": 74,
+     "y": 308,
+     "w": 76,
+     "h": 507,
+     "orientation": "vertical",
+     "pins": {
+      "+": "top",
+      "-": "bottom"
+     }
+    }
+   }
+  },
+  "edited": false,
+  "tracing_used": true
+ },
+ "files": [
+  {
+   "name": "build_inverter.m",
+   "size": 12847,
+   "kind": "script",
+   "origin": "simulink"
+  },
+  {
+   "name": "inverter.check.txt",
+   "size": 102,
+   "kind": "text",
+   "origin": "simulink"
+  },
+  {
+   "name": "inverter.sim.json",
+   "size": 5241,
+   "kind": "data",
+   "origin": "simulink"
+  },
+  {
+   "name": "inverter_sim.png",
+   "size": 63420,
+   "kind": "image",
+   "origin": "simulink"
+  },
+  {
+   "name": "inverter_sim.results.json",
+   "size": 2123,
+   "kind": "data",
+   "origin": "simulink"
+  },
+  {
+   "name": "inverter_sim.slx",
+   "size": 284914,
+   "kind": "model",
+   "origin": "simulink"
+  },
+  {
+   "name": "schematic.bom.csv",
+   "size": 601,
+   "kind": "table",
+   "origin": "reader"
+  },
+  {
+   "name": "schematic.json",
+   "size": 10017,
+   "kind": "data",
+   "origin": "reader"
+  },
+  {
+   "name": "schematic.md",
+   "size": 4043,
+   "kind": "report",
+   "origin": "reader"
+  },
+  {
+   "name": "schematic.net.txt",
+   "size": 1054,
+   "kind": "text",
+   "origin": "reader"
+  },
+  {
+   "name": "schematic.png",
+   "size": 16903,
+   "kind": "image",
+   "origin": "reader"
+  },
+  {
+   "name": "schematic.trace.png",
+   "size": 53402,
+   "kind": "image",
+   "origin": "reader"
+  }
+ ],
+ "matlab_available": false,
+ "simulink_view": {
+  "status": "done",
+  "error": null,
+  "stale": false,
+  "started": null,
+  "ended": null,
+  "phase": "Simulated",
+  "check": [
+   "PASS Load sees a square wave -8.398 .. 8.398 V, hand calculation ±8.4 V (10 V less two 0.8 V drops)"
+  ],
+  "log": [],
+  "matlab_available": false,
+  "model": "inverter_sim",
+  "assumed": [
+   "Gate timing is not in the drawing: switches fire as a square-wave bridge at 50 Hz (diagonal pairs 180° apart). Edit 'gate' in the .sim.json to change it.",
+   "Th1: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+   "Th2: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+   "Th3: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+   "Th4: Modelled as a gate-turn-off thyristor: SCRs fed from DC cannot turn off without a commutation circuit, which the drawing does not show.",
+   "Load: Load value not given; modelled as a 10 Ω resistor.",
+   "V: Value not readable; default 10 V."
+  ],
+  "issues": [],
+  "blocks": [
+   {
+    "id": "D1",
+    "kind": "diode",
+    "value": "unknown",
+    "nets": [
+     "N3",
+     "+V"
+    ]
+   },
+   {
+    "id": "D2",
+    "kind": "diode",
+    "value": "unknown",
+    "nets": [
+     "-V",
+     "N4"
+    ]
+   },
+   {
+    "id": "D3",
+    "kind": "diode",
+    "value": "unknown",
+    "nets": [
+     "N4",
+     "+V"
+    ]
+   },
+   {
+    "id": "D4",
+    "kind": "diode",
+    "value": "unknown",
+    "nets": [
+     "-V",
+     "N3"
+    ]
+   },
+   {
+    "id": "Th1",
+    "kind": "gto",
+    "value": "unknown",
+    "nets": [
+     "+V",
+     "N3",
+     "G_Th1"
+    ]
+   },
+   {
+    "id": "Th2",
+    "kind": "gto",
+    "value": "unknown",
+    "nets": [
+     "N4",
+     "-V",
+     "G_Th2"
+    ]
+   },
+   {
+    "id": "Th3",
+    "kind": "gto",
+    "value": "unknown",
+    "nets": [
+     "+V",
+     "N4",
+     "G_Th3"
+    ]
+   },
+   {
+    "id": "Th4",
+    "kind": "gto",
+    "value": "unknown",
+    "nets": [
+     "N3",
+     "-V",
+     "G_Th4"
+    ]
+   },
+   {
+    "id": "Load",
+    "kind": "resistor",
+    "value": "unknown",
+    "nets": [
+     "N3",
+     "N4"
+    ]
+   },
+   {
+    "id": "V",
+    "kind": "dc_voltage",
+    "value": "unknown",
+    "nets": [
+     "+V",
+     "-V"
+    ]
+   }
+  ],
+  "ground": "-V",
+  "results": {
+   "ok": true,
+   "error": "",
+   "nodes": [
+    {
+     "name": "N3",
+     "final": 9.199160083907634,
+     "min": 0.8008399160923656,
+     "max": 9.199160083907634
+    },
+    {
+     "name": "+V",
+     "final": 10,
+     "min": 10,
+     "max": 10
+    },
+    {
+     "name": "N4",
+     "final": 0.8008399160923656,
+     "min": 0.8008399160923656,
+     "max": 9.199160083907634
+    }
+   ],
+   "parts": [
+    {
+     "name": "D1",
+     "v_final": -0.8008399160923663,
+     "v_min": -9.199160083907634,
+     "v_max": -0.8008399160923663,
+     "i_final": -8.008399055015047e-09,
+     "i_min": -9.199160098057632e-08,
+     "i_max": -8.008399055015047e-09
+    },
+    {
+     "name": "D2",
+     "v_final": -0.8008399160923656,
+     "v_min": -9.199160083907634,
+     "v_max": -0.8008399160923656,
+     "i_final": -8.008399055015047e-09,
+     "i_min": -9.199160098057632e-08,
+     "i_max": -8.008399055015047e-09
+    },
+    {
+     "name": "D3",
+     "v_final": -9.199160083907634,
+     "v_min": -9.199160083907634,
+     "v_max": -0.8008399160923663,
+     "i_final": -9.199160083907633e-08,
+     "i_min": -9.199160083907633e-08,
+     "i_max": -8.008399160923658e-09
+    },
+    {
+     "name": "D4",
+     "v_final": -9.199160083907634,
+     "v_min": -9.199160083907634,
+     "v_max": -0.8008399160923656,
+     "i_final": -9.199160083907634e-08,
+     "i_min": -9.199160083907634e-08,
+     "i_max": -8.008399160923655e-09
+    },
+    {
+     "name": "Th1",
+     "v_final": 0.8008399160923663,
+     "v_min": 0.8008399160923663,
+     "v_max": 9.199160083907634,
+     "i_final": 0.8399240923655676,
+     "i_min": 9.199160083907635e-05,
+     "i_max": 0.8399240923655676
+    },
+    {
+     "name": "Th2",
+     "v_final": 0.8008399160923656,
+     "v_min": 0.8008399160923656,
+     "v_max": 9.199160083907634,
+     "i_final": 0.8399240923655676,
+     "i_min": 9.199160083907635e-05,
+     "i_max": 0.8399240923655676
+    },
+    {
+     "name": "Th3",
+     "v_final": 9.199160083907634,
+     "v_min": 0.8008399160923663,
+     "v_max": 9.199160083907634,
+     "i_final": 9.199160083907635e-05,
+     "i_min": 9.199160083907635e-05,
+     "i_max": 0.8399240923655676
+    },
+    {
+     "name": "Th4",
+     "v_final": 9.199160083907634,
+     "v_min": 0.8008399160923656,
+     "v_max": 9.199160083907634,
+     "i_final": 9.199160083907635e-05,
+     "i_min": 9.199160083907635e-05,
+     "i_max": 0.8399240923655676
+    },
+    {
+     "name": "Load",
+     "v_final": 8.398320167815267,
+     "v_min": -8.398320167815267,
+     "v_max": 8.398320167815267,
+     "i_final": 0.8398320167815267,
+     "i_min": -0.8398320167815267,
+     "i_max": 0.8398320167815267
+    },
+    {
+     "name": "V",
+     "v_final": 10,
+     "v_min": 10,
+     "v_max": 10,
+     "i_final": -0.8400161839664066,
+     "i_min": -0.8400161839664069,
+     "i_max": -0.8400161839664066
+    }
+   ]
+  },
+  "preview": true
+ }
+}

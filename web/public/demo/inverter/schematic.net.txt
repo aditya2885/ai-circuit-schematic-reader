@@ -1,0 +1,24 @@
+# Netlist reconstructed by schematic-reader from: inverter.png
+# UNVERIFIED: machine-read from an image. Check against the schematic before using it.
+
+## Components
+D1       diode      unknown    unknown          A=N3  K=+V
+D2       diode      unknown    unknown          A=-V  K=N4
+D3       diode      unknown    unknown          A=N4  K=+V
+D4       diode      unknown    unknown          A=-V  K=N3
+Th1      thyristor  unknown    unknown          A=+V  K=N3  G=G_Th1
+Th2      thyristor  unknown    unknown          A=N4  K=-V  G=G_Th2
+Th3      thyristor  unknown    unknown          A=+V  K=N4  G=G_Th3
+Th4      thyristor  unknown    unknown          A=N3  K=-V  G=G_Th4
+Load     other      unknown    unknown          1=N3  2=N4
+V        voltage_source unknown    unknown          +=+V  -=-V
+
+## Nets
++V (5): D1.K, D3.K, Th1.A, Th3.A, V.+
+-V (5): D2.A, D4.A, Th2.K, Th4.K, V.-
+G_Th1 (1): Th1.G
+G_Th2 (1): Th2.G
+G_Th3 (1): Th3.G
+G_Th4 (1): Th4.G
+N3 (5): D1.A, D4.K, Th1.K, Th4.A, Load.1
+N4 (5): D2.K, D3.A, Th2.A, Th3.K, Load.2

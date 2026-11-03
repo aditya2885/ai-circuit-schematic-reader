@@ -15,6 +15,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Everything this window shows is also saved to deploy.log next to this script, for troubleshooting.
+try { Start-Transcript -Path (Join-Path $PSScriptRoot 'deploy.log') -Force | Out-Null } catch { }
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 # Windows PowerShell 5.1 puts a UTF-8 byte-order mark in front of text piped to programs; git then cannot
 # read "protocol=https" on the first line of a credential request. Pipe plain UTF-8 instead.
@@ -33,7 +35,7 @@ $SiteUrl = "https://$Owner.github.io/$Repo/"
 # What is published: the app, the reader, the Simulink builder and the training notebook. Never the
 # datasets, model weights, analysis outputs or anything else in the project folder.
 $Dirs = @('server', 'web', 'context\schematic-reader', 'simulink', 'training')
-$Files = @('README.md', 'Start-SchematicReader.bat', 'deploy.bat', 'github-login.bat', 'deploy.ps1')
+$Files = @('README.md', 'Start-SchematicReader.bat', 'Start-Public.bat', 'public.ps1', 'deploy.bat', 'github-login.bat', 'deploy.ps1')
 $SkipDirs = @('node_modules', 'dist', 'dist-pages', '__pycache__', 'out', '.vite')
 $SkipFiles = @('*.pyc', '.env', '.env.local', '*.zip', '*.log')
 
@@ -161,10 +163,17 @@ foreach ($f in $list) {
     Set-Content (Join-Path $Stage '.gitignore') -Encoding ascii
 Invoke-Git -C $Stage config user.name $Owner
 Invoke-Git -C $Stage config user.email "$Owner@users.noreply.github.com"
+Invoke-Git -C $Stage config core.autocrlf false
+if (Quiet-Git -C $Stage remote) { Invoke-Git -C $Stage remote set-url origin $GitUrl } else { Invoke-Git -C $Stage remote add origin $GitUrl }
+# Build on top of whatever is on GitHub now (an earlier run, or an edit made on github.com), so the push is
+# always a plain fast-forward. The files copied above are the new content; the index follows GitHub's tip.
+if (Quiet-Git ls-remote --heads $GitUrl main) {
+    Invoke-Git -C $Stage fetch --quiet origin main
+    Invoke-Git -C $Stage reset --quiet --mixed FETCH_HEAD
+}
 Invoke-Git -C $Stage add -A
 if (Quiet-Git -C $Stage status --porcelain) { Invoke-Git -C $Stage commit --quiet -m "Publish AI Circuit Schematic Reader ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))" }
 else { Write-Host 'No code changes since the last publish.' }
-if (Quiet-Git -C $Stage remote) { Invoke-Git -C $Stage remote set-url origin $GitUrl } else { Invoke-Git -C $Stage remote add origin $GitUrl }
 Invoke-Git -C $Stage push --quiet -u origin main
 
 # ------------------------------------------------------------------ website -> gh-pages
@@ -176,10 +185,12 @@ try {
     $env:VITE_DEFAULT_MODE = 'auto'               # live when that server answers, demo otherwise
     $env:VITE_HOSTED = '1'
     $env:VITE_REPO_URL = $RepoUrl
+    # Start-Public.bat writes the analysis server's public address here; the site reads it on load.
+    $env:VITE_BACKEND_DISCOVERY = "https://api.github.com/repos/$Owner/$Repo/contents/backend.json?ref=live"
     & node node_modules\vite\bin\vite.js build --base "/$Repo/" --outDir $SiteDir --emptyOutDir --logLevel warn
     if ($LASTEXITCODE -ne 0) { Fail 'The website build failed.' }
 } finally {
-    Remove-Item Env:VITE_API_URL, Env:VITE_DEFAULT_MODE, Env:VITE_HOSTED, Env:VITE_REPO_URL -ErrorAction SilentlyContinue
+    Remove-Item Env:VITE_API_URL, Env:VITE_DEFAULT_MODE, Env:VITE_HOSTED, Env:VITE_REPO_URL, Env:VITE_BACKEND_DISCOVERY -ErrorAction SilentlyContinue
     Pop-Location
 }
 New-Item (Join-Path $SiteDir '.nojekyll') -ItemType File -Force | Out-Null
