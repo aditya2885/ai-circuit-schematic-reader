@@ -23,7 +23,8 @@ $Local = 'http://127.0.0.1:8000'
 $SiteUrl = "https://$Owner.github.io/$Repo/"
 $CfDir = Join-Path $Root 'tools_cloudflared'
 $Cf = Join-Path $CfDir 'cloudflared.exe'
-$CfLog = Join-Path $env:TEMP 'schematic-reader-tunnel.log'
+# A log per run: a tunnel left over from an earlier run may still hold the previous one open.
+$CfLog = Join-Path $env:TEMP ("schematic-reader-tunnel-{0}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmss'))
 
 function Step($text) { Write-Host ''; Write-Host "==> $text" -ForegroundColor Cyan }
 function Fail($text) { Write-Host ''; Write-Host "ERROR: $text" -ForegroundColor Red; exit 1 }
@@ -73,6 +74,9 @@ else {
     if (-not (Healthy $Local)) { Fail "The server did not start. Look at the server window for the error." }
 }
 $h = Invoke-RestMethod "$Local/api/health"
+if (-not ($h.PSObject.Properties.Name -contains 'owner')) {
+    Fail "An older version of the server is still running. Close the 'Schematic Reader server' window, then run Start-Public.bat again."
+}
 Write-Host ("Ollama: {0}   MATLAB: {1}" -f $(if ($h.ollama.ok) { 'ok' } else { 'NOT RUNNING - start the Ollama app' }), $(if ($h.matlab.ok) { 'ok' } else { 'not found' }))
 
 # ------------------------------------------------------------------ tunnel
@@ -83,7 +87,15 @@ if (-not (Test-Path $Cf)) {
     $ProgressPreference = 'SilentlyContinue'
     Invoke-WebRequest -UseBasicParsing 'https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe' -OutFile $Cf
 }
-if (Test-Path $CfLog) { Remove-Item $CfLog -Force }
+# Closing this window does not stop the hidden tunnel; stop any left over from an earlier run, so only the
+# tunnel whose address gets published is running.
+$old = @(Get-Process cloudflared -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $Cf })
+if ($old) {
+    $old | Stop-Process -Force -ErrorAction SilentlyContinue
+    Write-Host "Stopped $($old.Count) tunnel(s) left over from an earlier run."
+    Start-Sleep -Seconds 1
+}
+Get-ChildItem $env:TEMP -Filter 'schematic-reader-tunnel*' -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 $CfIn = "$CfLog.in"   # an empty file as the tunnel's input, so it never reads this window's keyboard
 Set-Content -Path $CfIn -Value $null
 $tunnel = Start-Process $Cf -ArgumentList 'tunnel', '--no-autoupdate', '--url', $Local -RedirectStandardError $CfLog `
@@ -112,6 +124,14 @@ Write-Host 'LIVE for everyone:' -ForegroundColor Green
 Write-Host "  $SiteUrl" -ForegroundColor Green
 Write-Host 'Anyone opening that link now gets Live mode (allow up to a minute). Keep this window and the server window open.'
 Write-Host 'To stop sharing: press Ctrl+C here, or close this window (the website then falls back to demo mode by itself).'
+# Open the site on this PC with the owner key in the link's #fragment: the browser keeps it, and from then on
+# the site may open MATLAB on this screen. Other visitors never have the key.
+$keyFile = Join-Path $Root 'server_data\owner.key'
+if (Test-Path $keyFile) {
+    $key = (Get-Content $keyFile -Raw).Trim()
+    Write-Host 'Opening the website on this PC (as the analysis PC: "Open in MATLAB" works here).'
+    Start-Process "$SiteUrl#owner=$key"
+}
 Write-Host ''
 # No Read-Host here: the tunnel process shares this console and its input, which made a prompt return at once.
 # Instead stay up while the tunnel runs, and report every minute whether the server still answers.

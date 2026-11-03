@@ -1,7 +1,6 @@
 import { ApiError, type CircuitService } from "./service";
 import type { Analysis, ChatEvent, Component, Health, SimulinkView, UploadMeta } from "./types";
 
-/** Base URL of the Python API. Empty means same origin (Vite proxies /api in development). */
 /** The app as served by the analysis server on this PC (Start-SchematicReader.bat): always Live. */
 export const LIVE_APP = "http://127.0.0.1:8000/";
 
@@ -29,7 +28,28 @@ export async function discoverPublicBackend(): Promise<string | null> {
   }
 }
 
+/** Base URL of the Python API. Empty means same origin (Vite proxies /api in development). */
 export const ENV_API_URL =(import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+
+const OWNER_KEY = "sr.ownerKey";
+
+/** The analysis PC's own browser receives this key once, in Start-Public.bat's link (#owner=...), and keeps it.
+ *  It lets that browser open MATLAB on the PC's screen through the public tunnel. A #fragment never leaves
+ *  the browser, so the key is not sent to GitHub; it only goes to the analysis server, in a header. */
+function takeOwnerKey(): string | null {
+  try {
+    const m = location.hash.match(/(?:^#|&)owner=([\w-]+)/);
+    if (m) {
+      localStorage.setItem(OWNER_KEY, m[1]);
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+    return localStorage.getItem(OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+const ownerKey = takeOwnerKey();
+const ownerHeaders = (): Record<string, string> => (ownerKey ? { "X-Owner-Key": ownerKey } : {});
 
 async function request<T>(base: string, path: string, init?: RequestInit): Promise<T> {
   let res: Response;
@@ -65,7 +85,7 @@ export function liveService(baseUrl: string): CircuitService {
   return {
     mode: "live",
 
-    health: () => request<Health>(base, "/api/health"),
+    health: () => request<Health>(base, "/api/health", { headers: ownerHeaders() }),
 
     upload(file, sourceName, onProgress) {
       // XMLHttpRequest, because fetch cannot report upload progress.
@@ -108,7 +128,7 @@ export function liveService(baseUrl: string): CircuitService {
 
     getSimulink: (id) => request<SimulinkView>(base, `/api/analyses/${id}/simulink`),
 
-    openInMatlab: (id) => request<void>(base, `/api/analyses/${id}/simulink/open`, { method: "POST" }),
+    openInMatlab: (id) => request<void>(base, `/api/analyses/${id}/simulink/open`, { method: "POST", headers: ownerHeaders() }),
 
     fileUrl: (id, name) => `${base}/api/analyses/${id}/files/${encodeURIComponent(name)}`,
 
@@ -117,7 +137,7 @@ export function liveService(baseUrl: string): CircuitService {
     async chat(req, onEvent, signal) {
       let res: Response;
       try {
-        res = await fetch(`${base}/api/chat`, { ...json(req), signal });
+        res = await fetch(`${base}/api/chat`, { ...json(req), headers: { "Content-Type": "application/json", ...ownerHeaders() }, signal });
       } catch (err) {
         if ((err as Error).name === "AbortError") throw err;
         throw new ApiError("Cannot reach the analysis server. Start it with: python server/app.py");

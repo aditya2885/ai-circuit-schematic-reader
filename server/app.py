@@ -8,6 +8,7 @@ Settings come from environment variables: SR_HOST, SR_PORT, SR_CORS_ORIGINS (com
 import io
 import json
 import os
+import secrets
 import sys
 import uuid
 import zipfile
@@ -23,7 +24,7 @@ from fastapi.staticfiles import StaticFiles  # noqa: E402
 from PIL import Image, ImageOps, UnidentifiedImageError  # noqa: E402
 from pydantic import BaseModel, Field, ValidationError  # noqa: E402
 
-from paths import UPLOADS, WEB_DIST  # noqa: E402
+from paths import OWNER_KEY, UPLOADS, WEB_DIST  # noqa: E402
 import chat  # noqa: E402
 import circuit  # noqa: E402
 import pipeline  # noqa: E402
@@ -44,6 +45,13 @@ def _remote(request: Request) -> bool:
     """True for visitors coming through the public tunnel (Start-Public.bat), whose requests reach this
     server from cloudflared on 127.0.0.1 but carry the visitor's address in these headers."""
     return "cf-connecting-ip" in request.headers or "x-forwarded-for" in request.headers
+
+
+def _owner(request: Request) -> bool:
+    """The analysis PC's own browser: a direct local request, or one carrying the owner key through the
+    tunnel. Only the owner may open MATLAB on this PC's screen."""
+    key = request.headers.get("x-owner-key", "")
+    return not _remote(request) or (bool(key) and secrets.compare_digest(key, OWNER_KEY))
 
 
 def _job(job_id: str) -> dict:
@@ -73,7 +81,7 @@ def health(request: Request):
     return {"ok": True, "version": VERSION,
             "ollama": {"ok": ollama_ok, "models": models, "error": ollama_error},
             "matlab": {"ok": pipeline.matlab_available(), "path": pipeline.MATLAB},
-            "remote": _remote(request)}
+            "remote": _remote(request), "owner": _owner(request)}
 
 
 # ---------------------------------------------------------------- uploads
@@ -193,7 +201,7 @@ def build_model(job_id: str):
 @app.post("/api/analyses/{job_id}/simulink/open", status_code=202)
 def open_model(job_id: str, request: Request):
     _job(job_id)
-    if _remote(request):
+    if not _owner(request):
         raise HTTPException(403, "MATLAB opens on the PC running the server, so only that PC can open it. "
                                  "Download the .slx model from this tab and open it in your own MATLAB.")
     try:
@@ -241,7 +249,7 @@ class ChatRequest(BaseModel):
 @app.post("/api/chat")
 def chat_endpoint(req: ChatRequest, request: Request):
     job_id = req.analysis_id if req.analysis_id and req.analysis_id.isalnum() else None
-    return StreamingResponse(chat.stream(job_id, req.message, req.history, req.model, remote=_remote(request)),
+    return StreamingResponse(chat.stream(job_id, req.message, req.history, req.model, remote=not _owner(request)),
                              media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
 

@@ -32,7 +32,7 @@ function CheckLine({ line }: { line: string }) {
 export function SimulinkTab({ service, analysis, tall }: TabProps) {
   const { toast, backend } = useStore();
   // MATLAB opens on the server PC's screen, so only that PC can ask for it (the server refuses others too).
-  const remote = backend.status === "online" && !!backend.health.remote;
+  const remote = backend.status === "online" && !!backend.health.remote && !backend.health.owner;
   const { sim, setSim } = useAnalysis(service, analysis.id);
   const [starting, setStarting] = useState(false);
   const [opening, setOpening] = useState(false);

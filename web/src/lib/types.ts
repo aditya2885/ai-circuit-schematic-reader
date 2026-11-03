@@ -158,6 +158,8 @@ export interface Health {
   matlab: { ok: boolean; path: string };
   /** True when this browser reaches the server through the public tunnel (not on the server PC). */
   remote?: boolean;
+  /** True for the analysis PC's own browser (local, or carrying the owner key): may open MATLAB on screen. */
+  owner?: boolean;
 }
 
 export interface AnalysisOptions {
