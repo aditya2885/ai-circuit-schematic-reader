@@ -7,6 +7,7 @@ import { cn, duration, labelOf } from "../../lib/utils";
 import { ImageViewer } from "../ui/ImageViewer";
 import { Badge, Button, EmptyState, Spinner } from "../ui/primitives";
 import { DownloadLink, Panel, Table, type TabProps } from "./shared";
+import { WaveformChart } from "./WaveformChart";
 
 const fmt = (x: number) => {
   const a = Math.abs(x);
@@ -93,13 +94,20 @@ export function SimulinkTab({ service, analysis, tall }: TabProps) {
           {sim.status === "running" ? `${sim.phase} · ${duration(sim.started, null)}` : sim.status === "done" ? `${sim.model}.slx · ${sim.blocks.length} blocks · ground ${sim.ground ?? "—"}` : live && !sim.matlab_available ? "MATLAB was not found on the analysis server." : "Built with MATLAB R2025b: every read value entered, then simulated and checked against a hand calculation."}
         </div>
       </div>
-      {sim.status === "done" && (
+      {sim.status === "done" && remote && slx && (
+        // Visitors over the internet cannot see the analysis PC's screen: hand them the model instead.
+        <a href={service.fileUrl(analysis.id, slx.name)} download title="Open it in your own MATLAB (Simscape Electrical)"
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-accent px-3.5 text-sm font-medium text-accent-fg hover:bg-accent-strong">
+          <MonitorPlay className="size-4" />Download model (.slx)
+        </a>
+      )}
+      {sim.status === "done" && !remote && (
         <Button
           variant={sim.stale ? "secondary" : "primary"}
           icon={<MonitorPlay className="size-4" />}
           loading={opening}
-          disabled={!live || remote}
-          title={remote ? "MATLAB opens on the analysis PC's screen; download the .slx below to open it in your own MATLAB" : live ? "Opens MATLAB on the PC running the server, shows the model and runs it" : "Needs the local server (Live mode)"}
+          disabled={!live}
+          title={live ? "Opens MATLAB on the PC running the server, shows the model and runs it" : "Needs the local server (Live mode)"}
           onClick={openMatlab}
         >
           Open in MATLAB
@@ -145,6 +153,22 @@ export function SimulinkTab({ service, analysis, tall }: TabProps) {
       {sim.status === "error" && sim.error && (
         <Panel title={<span className="flex items-center gap-1.5 text-err"><XCircle className="size-4" />Model build failed</span>}>
           <pre className="max-h-72 overflow-auto p-3.5 font-mono text-[11.5px] leading-relaxed whitespace-pre-wrap text-muted">{sim.error}</pre>
+        </Panel>
+      )}
+
+      {sim.status === "done" && (
+        <Panel
+          title="Simulation waveforms"
+          actions={<span className="text-[12px] text-faint">{sim.waveforms ? "node voltages from the Simscape run in MATLAB · hover to read values" : ""}</span>}
+        >
+          {sim.waveforms && sim.waveforms.t.length > 1 && sim.waveforms.series.length ? (
+            <div className="p-3"><WaveformChart data={sim.waveforms} /></div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3 p-3.5 text-[12.5px] text-muted">
+              This model was built before waveforms were saved. Rebuild it to see the scope traces here.
+              {canBuild && <Button size="sm" variant="secondary" icon={<RefreshCw className="size-3.5" />} loading={starting} onClick={generate}>Rebuild model</Button>}
+            </div>
+          )}
         </Panel>
       )}
 

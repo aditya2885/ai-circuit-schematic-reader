@@ -330,14 +330,26 @@ def _run_simulink(job_id: str) -> None:
         script.write_text(matlab_script(sim), encoding="utf-8")
         notes = [f"assumed: {a}" for a in sim["assumed"]] + [f"ISSUE: {i}" for i in sim["issues"]]
         if not sim["parts"]:
-            fail("No part of this circuit can be modelled in Simscape yet.")
+            fail("There is nothing to simulate: no part of this reading can be placed in a Simscape model.\n"
+                 + "".join(f"- {i}\n" for i in sim["issues"])
+                 + "Fix the parts and their nets in the Components tab (every part needs both pins on a net), "
+                   "then press Generate model again.")
             return
         phase(f"{len(sim['parts'])} blocks; waiting for MATLAB", notes)
         with _matlab_lock:
             phase("MATLAB is building and simulating the model (this takes a minute or two)")
             model = model_name(sim)
             slx, png = (out / f"{model}.slx").as_posix(), (out / f"{model}.png").as_posix()
-            batch = (f"run('{script.as_posix()}'); "
+            # After the build script, its simulation output ('out') and probed nets ('nets') are still in the
+            # workspace: save the node-voltage waveforms (at most 800 points) for the website's scope view.
+            waves = (out / f"{model}.waveforms.json").as_posix()
+            export = ("try, T = out.get('tout'); n = numel(T); idx = unique(round(linspace(1, n, min(n, 800)))); "
+                      "W = struct('t', T(idx).', 'series', {{}}); "
+                      "for k = 1:2:numel(nets), v = out.get(nets{k + 1}); "
+                      "W.series{end + 1} = struct('name', nets{k}, 'unit', 'V', 'y', v(idx).'); end, "
+                      f"fid = fopen('{waves}', 'w'); fprintf(fid, '%s', jsonencode(W)); fclose(fid); "
+                      "catch e, disp(['waveforms: ' e.message]); end; ")
+            batch = (f"run('{script.as_posix()}'); " + export +
                      f"try, load_system('{slx}'); print('-s{model}', '-dpng', '-r110', '{png}'); "
                      f"close_system('{model}', 0); catch e, disp(['preview: ' e.message]); end")
             proc = subprocess.run([MATLAB, "-batch", batch], capture_output=True, text=True, cwd=out)
@@ -370,7 +382,17 @@ def simulink_view(job_id: str) -> dict:
     sim = json.loads(sim_p.read_text(encoding="utf-8")) if sim_p.exists() else None
     model = model_name(sim) if sim else f"web_{job_id}_sim"
     res_p = out / f"{model}.results.json"
+    wave_p = out / f"{model}.waveforms.json"
+    waves = None
+    if wave_p.exists() and job["simulink"]["status"] == "done":
+        try:
+            waves = json.loads(wave_p.read_text(encoding="utf-8"))
+            if isinstance(waves.get("series"), dict):   # jsonencode writes a one-element cell as an object
+                waves["series"] = [waves["series"]]
+        except (ValueError, AttributeError):
+            waves = None
     return job["simulink"] | {
+        "waveforms": waves,
         "matlab_available": matlab_available(),
         "model": model,
         "assumed": sim["assumed"] if sim else [],

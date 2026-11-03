@@ -1,6 +1,9 @@
 """Build the web app's demo-mode data from saved, real pipeline runs (results/ and simulink/out/).
 
-    python server/make_demo.py
+    python server/make_demo.py [WAVES_DIR]
+
+WAVES_DIR (optional) holds <name>/<name>_sim.waveforms.json from a MATLAB run of each sample's build script,
+for the scope view; without it the demo shows no waveforms.
 
 Writes web/public/demo/<name>/analysis.json (the same shape GET /api/analyses/<id> returns, plus the
 Simulink view) and copies that run's files next to it. Demo mode replays these saved results and labels
@@ -21,7 +24,7 @@ DEMOS = {"handwritten": "handwritten.jpeg", "inverter": "inverter.png"}
 OUT = ROOT / "web" / "public" / "demo"
 
 
-def build(name: str, image: str) -> dict:
+def build(name: str, image: str, waves_dir: Path | None = None) -> dict:
     dest = OUT / name
     if dest.exists():
         shutil.rmtree(dest)
@@ -90,7 +93,14 @@ def build(name: str, image: str) -> dict:
         "blocks": [{"id": p["id"], "kind": p["kind"], "value": p.get("value_text", ""), "nets": p["nets"]}
                    for p in sim["parts"]],
         "ground": sim["ground"], "results": results, "preview": (dest / f"{model}.png").exists(),
+        "waveforms": None,
     }
+    wave = waves_dir / name / f"{model}.waveforms.json" if waves_dir else None
+    if wave and wave.exists():
+        w = json.loads(wave.read_text(encoding="utf-8"))
+        if isinstance(w.get("series"), dict):
+            w["series"] = [w["series"]]
+        simulink["waveforms"] = w
     analysis = {
         "id": f"demo-{name}", "demo": True, "created": 0, "updated": 0, "status": "done", "error": None,
         "title": view["circuit_type"],
@@ -107,6 +117,7 @@ def build(name: str, image: str) -> dict:
 
 
 if __name__ == "__main__":
+    waves = Path(sys.argv[1]) if len(sys.argv) > 1 else None
     for n, img in DEMOS.items():
-        a = build(n, img)
+        a = build(n, img, waves)
         print(n, a["title"], len(a["result"]["components"]), "parts,", len(a["files"]), "files")

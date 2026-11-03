@@ -113,6 +113,12 @@ export interface SimResults {
   parts: { name: string; v_final: number; v_min: number; v_max: number; i_final: number; i_min: number; i_max: number }[];
 }
 
+/** Node voltages over time, from MATLAB's simulation (at most 800 samples). */
+export interface Waveforms {
+  t: number[];
+  series: { name: string; unit: string; y: number[] }[];
+}
+
 export interface SimulinkView extends SimulinkState {
   matlab_available: boolean;
   model: string;
@@ -122,6 +128,7 @@ export interface SimulinkView extends SimulinkState {
   ground: string | null;
   results: SimResults | null;
   preview: boolean;
+  waveforms?: Waveforms | null;
 }
 
 export type AnalysisStatus = "queued" | "running" | "done" | "error" | "rejected";

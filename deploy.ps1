@@ -11,7 +11,8 @@ param(
     [string]$Owner = 'aditya2885',
     [string]$Repo = 'ai-circuit-schematic-reader',
     [switch]$DryRun,  # list the files that would be published, then stop
-    [switch]$Login    # sign out of GitHub and sign in again (github-login.bat), then stop
+    [switch]$Login,   # sign out of GitHub and sign in again (github-login.bat), then stop
+    [string]$Domain   # optional own domain for the website, e.g. circuittosim.in (DNS must point to GitHub Pages)
 )
 
 $ErrorActionPreference = 'Stop'
@@ -30,7 +31,8 @@ $SiteDir = Join-Path $Work 'site'
 $SiteGit = Join-Path $Work 'site-git'
 $RepoUrl = "https://github.com/$Owner/$Repo"
 $GitUrl = "$RepoUrl.git"
-$SiteUrl = "https://$Owner.github.io/$Repo/"
+$SiteUrl = if ($Domain) { "https://$Domain/" } else { "https://$Owner.github.io/$Repo/" }
+$BasePath = if ($Domain) { '/' } else { "/$Repo/" }   # an own domain serves the site at its root
 
 # What is published: the app, the reader, the Simulink builder and the training notebook. Never the
 # datasets, model weights, analysis outputs or anything else in the project folder.
@@ -187,13 +189,14 @@ try {
     $env:VITE_REPO_URL = $RepoUrl
     # Start-Public.bat writes the analysis server's public address here; the site reads it on load.
     $env:VITE_BACKEND_DISCOVERY = "https://api.github.com/repos/$Owner/$Repo/contents/backend.json?ref=live"
-    & node node_modules\vite\bin\vite.js build --base "/$Repo/" --outDir $SiteDir --emptyOutDir --logLevel warn
+    & node node_modules\vite\bin\vite.js build --base $BasePath --outDir $SiteDir --emptyOutDir --logLevel warn
     if ($LASTEXITCODE -ne 0) { Fail 'The website build failed.' }
 } finally {
     Remove-Item Env:VITE_API_URL, Env:VITE_DEFAULT_MODE, Env:VITE_HOSTED, Env:VITE_REPO_URL, Env:VITE_BACKEND_DISCOVERY -ErrorAction SilentlyContinue
     Pop-Location
 }
 New-Item (Join-Path $SiteDir '.nojekyll') -ItemType File -Force | Out-Null
+if ($Domain) { Set-Content -Path (Join-Path $SiteDir 'CNAME') -Value $Domain -Encoding ascii }   # GitHub Pages custom domain
 
 Step 'Pushing the website (gh-pages branch)'
 if (Test-Path $SiteGit) { Remove-Item $SiteGit -Recurse -Force }
@@ -213,6 +216,10 @@ catch {
         $null = Api PUT "/repos/$Owner/$Repo/pages" @{ source = @{ branch = 'gh-pages'; path = '/' } }
         Write-Host 'Already on; source set to gh-pages.'
     } else { Fail "Could not enable GitHub Pages ($($_.Exception.Message)). Turn it on at $RepoUrl/settings/pages (branch gh-pages)." }
+}
+if ($Domain) {
+    try { $null = Api PUT "/repos/$Owner/$Repo/pages" @{ cname = $Domain; source = @{ branch = 'gh-pages'; path = '/' } }; Write-Host "Custom domain set: $Domain" }
+    catch { Write-Host "Could not set the custom domain yet ($($_.Exception.Message)). Check the DNS records, then run deploy again." -ForegroundColor Yellow }
 }
 try { $null = Api POST "/repos/$Owner/$Repo/pages/builds" } catch { }
 
